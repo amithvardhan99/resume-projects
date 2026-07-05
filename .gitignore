@@ -1,0 +1,67 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+
+# ==========================
+# Google OAuth Credentials
+# ==========================
+credentials.json
+client_secret*.json
+token.pickle
+
+# ==========================
+# Jupyter Notebook
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# IDE Files
+# ==========================
+.vscode/
+.idea/
+*.iml
+
+# ==========================
+# OS Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Logs
+# ==========================
+*.log
+
+# ==========================
+# Build & Distribution
+# ==========================
+build/
+dist/
+*.egg-info/
+
+# ==========================
+# Cache
+# ==========================
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# ==========================
+# Coverage
+# ==========================
+.coverage
+htmlcov/
