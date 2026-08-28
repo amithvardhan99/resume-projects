@@ -17,4 +17,5 @@ dependencies = [
     "numpy>=2.5.1",
     "pandas>=3.0.3",
     "pandas-stubs~=3.0.3",
+    "seaborn>=0.13.2",
 ]
