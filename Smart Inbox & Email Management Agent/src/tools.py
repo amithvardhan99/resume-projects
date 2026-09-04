@@ -98,7 +98,7 @@ def list_unread_emails():
 
         list_of_emails.append({
             "uid": i.decode(), #Message serial number according to IMAP
-            "date": date,#.astimezone().strftime("%Y-%m-%d %H:%M"),
+            "date": date,#.astimezone().strftime("%Y-%m.py-%d %H:%M"),
             "subject": subject,
             "sender": sender
         })
