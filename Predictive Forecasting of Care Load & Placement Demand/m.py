@@ -43,3 +43,27 @@ def retrieve_mse_and_rmse_
     rmse_horizon_error_profile = rmse_df.mean()
     rmse_horizon_error_profile.drop(["Fold","RMSE"],axis=0,inplace=True)
     rmse_horizon_error_profile = round(np.power(rmse_horizon_error_profile,0.5),2)
+
+
+def retrieve_best_model_1(df):
+    p = [0,1,2]
+    q = [0,1,2]
+    best_aic = np.inf
+    combination_of_p_and_q_values = list(itertools.product(p,q))
+    ctr = 1
+
+    for i in combination_of_p_and_q_values:
+	    try:
+	        model = ARIMA(df["HHS_Care"],order=(i[0],1,i[1]))
+	        predicted = model.fit()
+	        predicted_aic = predicted.aic
+	        if predicted_aic < best_aic:
+	            best_aic = predicted_aic
+	            best_model = model
+	            best_order = i
+	        print(ctr,"",end="")
+	        ctr += 1
+	    except:
+	        continue
+    print()
+    return best_model,best_aic,best_order
