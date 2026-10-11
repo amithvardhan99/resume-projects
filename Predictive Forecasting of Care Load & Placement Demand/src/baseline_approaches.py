@@ -14,7 +14,7 @@ def calculate_moving_avg(df, window_dates, window_size, target_variable):
     return df[df["Date"].isin(window_dates)][f"{target_variable}_rolling_avg_{window_size}"].round(2).values
 
 
-def multi_horizon_evaluation(df_7,validation_window_1,size_of_window,target_variable,method):
+def multi_horizon_evaluation(df_7,validation_window_1,target_variable,method,size_of_window=7):
     validation_data = retrieve_validation_window(validation_window_1,size_of_window)
     cols = ["Day " + str(i) for i in range(1, size_of_window + 1)]
 
@@ -70,6 +70,6 @@ def multi_horizon_evaluation(df_7,validation_window_1,size_of_window,target_vari
     # RMSE by forecast horizon
     rmse_horizon_error_profile = rmse_df.mean()
     rmse_horizon_error_profile.drop(["Fold", "RMSE"],axis=0,inplace=True)
-    rmse_horizon_error_profile = np.sqrt(rmse_horizon_error_profile).round(2)
+    rmse_horizon_error_profile = np.power(rmse_horizon_error_profile,0.5).round(2)
 
     return (mae_df,rmse_df,mae_horizon_error_profile,rmse_horizon_error_profile)
