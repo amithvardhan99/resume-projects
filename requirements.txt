@@ -1,0 +1,14 @@
+numpy
+pandas
+statsmodels
+scikit-learn
+tensorflow
+matplotlib
+seaborn
+plotly
+torch
+torchvision
+nltk
+ipykernel
+jupyter
+notebook

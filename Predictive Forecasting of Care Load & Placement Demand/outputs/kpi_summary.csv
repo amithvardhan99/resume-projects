@@ -1,0 +1,3 @@
+Target,Best_Model,Best_MAE,Best_RMSE,Best_MAPE,Forecast_Accuracy_Pct,Surge_Lead_Time_Days,Notes
+HHS_Care,LinearFeatures,23.16,26.32,1.0,99.0,14,Lower MAE/RMSE is better. Accuracy % = 100 - MAPE.
+Discharged_From_HHS,LinearFeatures,9.97,12.22,143.53,0.0,14,Lower MAE/RMSE is better. Accuracy % = 100 - MAPE.

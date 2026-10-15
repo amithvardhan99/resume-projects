@@ -1,0 +1,11 @@
+Target,Model,MAE,RMSE,MAPE,Forecast_Accuracy_Pct
+HHS_Care,Naive,4120.44,4121.68,178.94,0.0
+HHS_Care,Moving_Average,4250.01,4251.21,184.56,0.0
+HHS_Care,ARIMA,4147.08,4148.35,180.1,0.0
+HHS_Care,ExpSmoothing,3047.11,3129.37,133.53,0.0
+HHS_Care,LinearFeatures,23.16,26.32,1.0,99.0
+Discharged_From_HHS,Naive,149.98,150.03,1916.06,0.0
+Discharged_From_HHS,Moving_Average,153.69,153.74,1962.86,0.0
+Discharged_From_HHS,ARIMA,194.3,195.94,2520.1,0.0
+Discharged_From_HHS,ExpSmoothing,131.71,132.1,1667.27,0.0
+Discharged_From_HHS,LinearFeatures,9.97,12.22,143.53,0.0
