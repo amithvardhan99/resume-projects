@@ -125,7 +125,7 @@ with tab1:
         y_col = "HHS_Care" if target == "HHS_Care" else "Discharged_From_HHS"
         fig.add_trace(go.Scatter(
             x=recent["Date"], y=recent[y_col],
-            name="Recent actual", line=dict(color="black", width=2)
+            name="Recent actual", line=dict(color="white", width=2)
         ))
         for m in selected_models:
             if m in fwd.columns:
@@ -165,7 +165,7 @@ with tab2:
         actual_once = tp.drop_duplicates("Date")[["Date", "Actual"]]
         fig2.add_trace(go.Scatter(
             x=actual_once["Date"], y=actual_once["Actual"],
-            name="Actual", line=dict(color="black", width=2, dash="dot")
+            name="Actual", line=dict(color="white", width=2, dash="dot")
         ))
         fig2.update_layout(height=450)
         st.plotly_chart(fig2, use_container_width=True)
