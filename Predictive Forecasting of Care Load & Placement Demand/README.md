@@ -64,7 +64,8 @@ Then open the link that appears in the terminal (usually http://localhost:8501).
 - **Moving Average** — uses the average of the last 7 days  
 - **ARIMA** — a common statistical time-series model  
 - **Exponential Smoothing** — another statistical model that follows trends  
-- **LinearFeatures** — uses past values and rolling averages as inputs (simple machine-learning style)
+- **Random Forest** — machine-learning model that builds many decision trees and averages them  
+- **Gradient Boosting** — machine-learning model that builds trees one after another to fix earlier errors  
 
 ---
 

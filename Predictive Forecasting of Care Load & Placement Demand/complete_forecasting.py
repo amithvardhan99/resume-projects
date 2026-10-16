@@ -5,11 +5,9 @@ Simple, easy-to-follow forecasting pipeline.
 What this script does:
 1. Loads the engineered dataset
 2. Splits data by time (train / validation / test)
-3. Trains baseline and statistical models (+ simple linear ML)
+3. Trains baseline, statistical, and machine-learning models
 4. Forecasts HHS Care load and Discharge demand
 5. Saves metrics, forecasts, and KPI summary to the outputs folder
-
-Dependencies used: numpy, pandas, statsmodels only (no scikit-learn).
 """
 
 import warnings
@@ -20,6 +18,8 @@ import pandas as pd
 from datetime import timedelta
 from pathlib import Path
 
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
@@ -38,17 +38,17 @@ df = pd.read_csv(DATA_PATH)
 df["Date"] = pd.to_datetime(df["Date"])
 df = df.sort_values("Date").reset_index(drop=True)
 
-# Drop early rows that still have NaN lags (needed for feature-based models)
+# Drop early rows that still have NaN lags (needed for ML models)
 df_ml = df.dropna().reset_index(drop=True)
 
 print("Data loaded.")
 print("Date range:", df["Date"].min().date(), "to", df["Date"].max().date())
 print("Total days:", len(df))
-print("Days usable for feature models (after lag NaNs removed):", len(df_ml))
+print("Days usable for ML (after lag NaNs removed):", len(df_ml))
 
 # -------------------------------------------------
 # 2. Time-based train / validation / test split
-#    (~67% train, ~25% val, rest test) — same idea as the notebook
+#    (~67% train, ~25% val, rest test)
 # -------------------------------------------------
 initial_day = df["Date"].iloc[0]
 final_day = df["Date"].iloc[-1]
@@ -77,8 +77,8 @@ def calc_metrics(actual, predicted):
     """Return MAE, RMSE, MAPE for one series of forecasts."""
     actual = np.asarray(actual, dtype=float)
     predicted = np.asarray(predicted, dtype=float)
-    mae = np.mean(np.abs(actual - predicted))
-    rmse = np.sqrt(np.mean((actual - predicted) ** 2))
+    mae = mean_absolute_error(actual, predicted)
+    rmse = np.sqrt(mean_squared_error(actual, predicted))
     nonzero = actual != 0
     if nonzero.sum() == 0:
         mape = np.nan
@@ -128,7 +128,7 @@ def arima_forecast(series, horizon, order=(2, 1, 2)):
 # 5. Exponential Smoothing (Holt linear trend)
 # -------------------------------------------------
 def exp_smoothing_forecast(series, horizon):
-    """Holt linear trend (no strong weekly seasonality assumed)."""
+    """Holt linear trend."""
     try:
         model = ExponentialSmoothing(
             series.astype(float),
@@ -145,9 +145,7 @@ def exp_smoothing_forecast(series, horizon):
 
 
 # -------------------------------------------------
-# 6. Simple linear "ML" model (numpy least squares)
-#    This stands in for Random Forest / Gradient Boosting
-#    when scikit-learn is not available. Same features are used.
+# 6. Machine learning models (Random Forest & Gradient Boosting)
 # -------------------------------------------------
 FEATURE_COLS = [
     "Placed_In_CBP_lag_1", "CBP_Custody_lag_1", "CBP_To_HHS_lag_1",
@@ -156,32 +154,33 @@ FEATURE_COLS = [
     "HHS_Care_lag_7", "Discharged_From_HHS_lag_7",
     "Placed_In_CBP_lag_14", "CBP_Custody_lag_14", "CBP_To_HHS_lag_14",
     "HHS_Care_lag_14", "Discharged_From_HHS_lag_14",
-    "HHS_Care_rolling_avg_7", "Discharged_From_HHS_rolling_avg_7",
-    "HHS_Care_rolling_avg_14", "Discharged_From_HHS_rolling_avg_14",
-    "Net_HHS_Flow", "Net_HHS_Flow_rolling_avg_7",
+    "Placed_In_CBP_rolling_avg_7", "CBP_Custody_rolling_avg_7",
+    "CBP_To_HHS_rolling_avg_7", "HHS_Care_rolling_avg_7",
+    "Discharged_From_HHS_rolling_avg_7",
+    "Placed_In_CBP_rolling_avg_14", "CBP_Custody_rolling_avg_14",
+    "CBP_To_HHS_rolling_avg_14", "HHS_Care_rolling_avg_14",
+    "Discharged_From_HHS_rolling_avg_14",
+    "Net_HHS_Flow", "Net_HHS_Flow_rolling_avg_7", "Net_HHS_Flow_rolling_avg_14",
+    "Net_HHS_Flow_rolling_std_7",
     "Day_Of_Week", "Month", "Is_Weekend"
 ]
 
 
-def train_linear_model(train_frame, target):
-    """
-    Ordinary least-squares linear regression with numpy.
-    Returns coefficient vector (including intercept).
-    """
-    X = train_frame[FEATURE_COLS].astype(float).values
-    y = train_frame[target].astype(float).values
-    # Add intercept column
-    X_design = np.column_stack([np.ones(len(X)), X])
-    # Solve least squares
-    coeffs, residuals, rank, s = np.linalg.lstsq(X_design, y, rcond=None)
-    return coeffs
+def train_ml_model(train_frame, target, model_type="rf"):
+    """Train Random Forest or Gradient Boosting on feature columns."""
+    X = train_frame[FEATURE_COLS]
+    y = train_frame[target]
+    if model_type == "rf":
+        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+    else:
+        model = GradientBoostingRegressor(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    return model
 
 
-def linear_predict(coeffs, frame):
-    """Predict with the linear model coefficients."""
-    X = frame[FEATURE_COLS].astype(float).values
-    X_design = np.column_stack([np.ones(len(X)), X])
-    return X_design @ coeffs
+def ml_predict(model, frame):
+    """Predict using an already trained ML model."""
+    return model.predict(frame[FEATURE_COLS])
 
 
 # -------------------------------------------------
@@ -200,7 +199,6 @@ for target in TARGETS:
 
     train_series = train_df.set_index("Date")[target]
     actual_test = test_df[target].values.astype(float)
-    dates_test = test_df["Date"].values
 
     # Naive
     pred = naive_forecast(train_series, HORIZON)
@@ -208,7 +206,7 @@ for target in TARGETS:
     results.append({"Target": target, "Model": "Naive", "MAE": mae, "RMSE": rmse,
                     "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
     forecast_store[(target, "Naive")] = pred
-    print(f"  Naive            MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+    print(f"  Naive              MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
 
     # Moving Average
     pred = moving_average_forecast(train_series, HORIZON, window=7)
@@ -216,7 +214,7 @@ for target in TARGETS:
     results.append({"Target": target, "Model": "Moving_Average", "MAE": mae, "RMSE": rmse,
                     "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
     forecast_store[(target, "Moving_Average")] = pred
-    print(f"  Moving Average   MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+    print(f"  Moving Average     MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
 
     # ARIMA
     pred = arima_forecast(train_series, HORIZON, order=(2, 1, 2))
@@ -224,7 +222,7 @@ for target in TARGETS:
     results.append({"Target": target, "Model": "ARIMA", "MAE": mae, "RMSE": rmse,
                     "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
     forecast_store[(target, "ARIMA")] = pred
-    print(f"  ARIMA            MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+    print(f"  ARIMA              MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
 
     # Exponential Smoothing
     pred = exp_smoothing_forecast(train_series, HORIZON)
@@ -232,17 +230,26 @@ for target in TARGETS:
     results.append({"Target": target, "Model": "ExpSmoothing", "MAE": mae, "RMSE": rmse,
                     "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
     forecast_store[(target, "ExpSmoothing")] = pred
-    print(f"  ExpSmoothing     MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+    print(f"  ExpSmoothing       MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
 
-    # Linear feature model (proxy for RF / Gradient Boosting)
-    coeffs = train_linear_model(train_ml, target)
-    pred_ml = linear_predict(coeffs, test_ml)
+    # Random Forest
+    rf_model = train_ml_model(train_ml, target, model_type="rf")
+    pred_rf = ml_predict(rf_model, test_ml)
     actual_ml = test_ml[target].values.astype(float)
-    mae, rmse, mape = calc_metrics(actual_ml, pred_ml)
-    results.append({"Target": target, "Model": "LinearFeatures", "MAE": mae, "RMSE": rmse,
+    mae, rmse, mape = calc_metrics(actual_ml, pred_rf)
+    results.append({"Target": target, "Model": "RandomForest", "MAE": mae, "RMSE": rmse,
                     "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
-    forecast_store[(target, "LinearFeatures")] = pred_ml
-    print(f"  LinearFeatures   MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+    forecast_store[(target, "RandomForest")] = pred_rf
+    print(f"  RandomForest       MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
+
+    # Gradient Boosting
+    gb_model = train_ml_model(train_ml, target, model_type="gb")
+    pred_gb = ml_predict(gb_model, test_ml)
+    mae, rmse, mape = calc_metrics(actual_ml, pred_gb)
+    results.append({"Target": target, "Model": "GradientBoosting", "MAE": mae, "RMSE": rmse,
+                    "MAPE": mape, "Forecast_Accuracy_Pct": accuracy_pct(mape)})
+    forecast_store[(target, "GradientBoosting")] = pred_gb
+    print(f"  GradientBoosting   MAE={mae:8.2f}  RMSE={rmse:8.2f}  MAPE={mape:6.2f}%")
 
 # -------------------------------------------------
 # 8. Save metric table
@@ -269,11 +276,13 @@ for target in TARGETS:
     fwd_arima = arima_forecast(full_series, FORWARD_DAYS, order=(2, 1, 2))
     fwd_es = exp_smoothing_forecast(full_series, FORWARD_DAYS)
 
-    # Linear model on all history; hold last feature row constant
-    coeffs_full = train_linear_model(df_ml, target)
+    # ML: retrain on all history; hold last feature row constant for short horizon
+    rf_full = train_ml_model(df_ml, target, model_type="rf")
+    gb_full = train_ml_model(df_ml, target, model_type="gb")
     last_feat = df_ml[FEATURE_COLS].iloc[[-1]]
     future_feat = pd.concat([last_feat] * FORWARD_DAYS, ignore_index=True)
-    fwd_lin = linear_predict(coeffs_full, future_feat)
+    fwd_rf = rf_full.predict(future_feat)
+    fwd_gb = gb_full.predict(future_feat)
 
     for i, d in enumerate(future_dates):
         forward_rows.append({
@@ -283,7 +292,8 @@ for target in TARGETS:
             "Moving_Average": round(float(fwd_ma[i]), 1),
             "ARIMA": round(float(fwd_arima[i]), 1),
             "ExpSmoothing": round(float(fwd_es[i]), 1),
-            "LinearFeatures": round(float(fwd_lin[i]), 1),
+            "RandomForest": round(float(fwd_rf[i]), 1),
+            "GradientBoosting": round(float(fwd_gb[i]), 1),
         })
 
 forward_df = pd.DataFrame(forward_rows)
@@ -341,12 +351,14 @@ print("Saved KPI summary to", kpi_path)
 # 12. Test-period predictions for charts
 # -------------------------------------------------
 test_pred_rows = []
+model_names = ["Naive", "Moving_Average", "ARIMA", "ExpSmoothing", "RandomForest", "GradientBoosting"]
+
 for target in TARGETS:
-    for model_name in ["Naive", "Moving_Average", "ARIMA", "ExpSmoothing", "LinearFeatures"]:
+    for model_name in model_names:
         preds = forecast_store.get((target, model_name))
         if preds is None:
             continue
-        if model_name == "LinearFeatures":
+        if model_name in ("RandomForest", "GradientBoosting"):
             dates = test_ml["Date"].values
             actual = test_ml[target].values
         else:
@@ -368,4 +380,4 @@ test_pred_df.to_csv(test_pred_path, index=False)
 print("Saved test predictions to", test_pred_path)
 
 print("\nDone. All outputs are in the 'outputs' folder.")
-print("Next step: run the Streamlit app (app/streamlit_app.py).")
+print("Models used: Naive, Moving Average, ARIMA, ExpSmoothing, RandomForest, GradientBoosting.")

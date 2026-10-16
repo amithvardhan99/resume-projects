@@ -73,11 +73,11 @@ target = st.sidebar.selectbox(
     format_func=lambda x: "Children in HHS Care" if x == "HHS_Care" else "Discharges (Placement Demand)"
 )
 
-model_options = ["Naive", "Moving_Average", "ARIMA", "ExpSmoothing", "LinearFeatures"]
+model_options = ["Naive", "Moving_Average", "ARIMA", "ExpSmoothing", "RandomForest", "GradientBoosting"]
 selected_models = st.sidebar.multiselect(
     "Models to display",
     options=model_options,
-    default=["ExpSmoothing", "LinearFeatures", "ARIMA"]
+    default=["ExpSmoothing", "RandomForest", "GradientBoosting"]
 )
 
 horizon = st.sidebar.slider("Forward horizon (days)", min_value=3, max_value=14, value=14)
@@ -207,5 +207,5 @@ with tab4:
 st.markdown("---")
 st.caption(
     "Project: Predictive Forecasting of Care Load & Placement Demand | "
-    "Models: Naive, Moving Average, ARIMA, Exponential Smoothing, Linear Feature Model"
+    "Models: Naive, Moving Average, ARIMA, Exponential Smoothing, Random Forest, Gradient Boosting"
 )
