@@ -37,3 +37,32 @@ def return_expertise_vs_rating(df_1,display_graph=False,**kwargs):
         plt.show()
 
     return expertise_vs_rating, each_expertise, df
+
+
+
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+
+nrows = 4
+ncols = len(df["CourseCategory"].unique())//nrows
+
+list_of_course_categories = df["CourseCategory"].unique()
+
+# fig, ax = plt.subplots(nrows=len(list_of_course_categories),ncols=1,figsize=(20,10))
+fig, ax = plt.subplots(nrows=nrows,ncols=ncols,figsize=(20,18))
+fig.subplots_adjust(hspace=0.8, wspace=0.5)
+
+ctr = 0
+for (i,j) in list(itertools.product(range(nrows),range(ncols))):
+    course_category = list_of_course_categories[ctr]
+    lf = df[df["CourseCategory"]==course_category]["CourseRating"].reset_index(drop=True)
+    sns.lineplot(lf,ax=ax[i,j],drawstyle="steps-post",lw=4)
+    ax[i,j].set_title(course_category)
+    ax[i,j].set_xticks([])
+
+    #ax[ctr] = sns.pointplot(lf)
+    #
+    ctr += 1
