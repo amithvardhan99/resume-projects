@@ -66,3 +66,42 @@ for (i,j) in list(itertools.product(range(nrows),range(ncols))):
     #ax[ctr] = sns.pointplot(lf)
     #
     ctr += 1
+
+
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+#############################################################################################################
+
+
+total_enrolments = pd.DataFrame(columns=["Tier","Total Enrolments","Average Per Teacher"])
+total_enrolments.loc[0,"Tier"] = "Low"
+total_enrolments.loc[0,"Total Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Low"]["Enrolments"].sum()
+total_enrolments.loc[0,"Average Per Teacher"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Low"]["Enrolments"].mean().round(2)
+total_enrolments.loc[0,"First Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Low"]["Enrolments"].quantile(0.25)
+total_enrolments.loc[0,"Median Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Low"]["Enrolments"].median()
+total_enrolments.loc[0,"Third Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Low"]["Enrolments"].quantile(0.75)
+
+
+
+total_enrolments.loc[1,"Tier"] = "Mid"
+total_enrolments.loc[1,"Total Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Mid"]["Enrolments"].sum()
+total_enrolments.loc[1,"Average Per Teacher"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Mid"]["Enrolments"].mean().round(2)
+total_enrolments.loc[1,"First Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Mid"]["Enrolments"].quantile(0.25)
+total_enrolments.loc[1,"Median Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Mid"]["Enrolments"].median()
+total_enrolments.loc[1,"Third Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="Mid"]["Enrolments"].quantile(0.75)
+
+
+total_enrolments.loc[2,"Tier"] = "High"
+total_enrolments.loc[2,"Total Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="High"]["Enrolments"].sum()
+total_enrolments.loc[2,"Average Per Teacher"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="High"]["Enrolments"].mean().round(2)
+total_enrolments.loc[2,"First Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="High"]["Enrolments"].quantile(0.25)
+total_enrolments.loc[2,"Median Enrolments"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="High"]["Enrolments"].median()
+total_enrolments.loc[2,"Third Quartile"] = teacher_names_with_ratings[teacher_names_with_ratings["Tier"]=="High"]["Enrolments"].quantile(0.75)
+
+
+
+sns.boxplot(x=teacher_names_with_ratings_1["Tier"],y=teacher_names_with_ratings_1["Enrolments"])
+total_enrolments
+
